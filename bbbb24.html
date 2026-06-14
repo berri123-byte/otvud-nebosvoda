@@ -1,0 +1,1744 @@
+<!DOCTYPE html>
+<html lang="bg">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Отвъд Небосвода</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700;900&family=Raleway:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --gold: #c9a84c;
+    --gold-light: #f0d080;
+    --deep-blue: #03040f;
+    --mid-blue: #0a0e2a;
+    --nebula-purple: #1a0a3a;
+    --text: #e8e0f0;
+    --dim: #8888aa;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--deep-blue);
+    color: var(--text);
+    font-family: 'Raleway', sans-serif;
+    font-weight: 300;
+    overflow-x: hidden;
+  }
+
+  /* ── STARFIELD CANVAS ── */
+  #starfield {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ── NEBULA OVERLAY ── */
+  .nebula-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 30%, rgba(80,20,120,0.18) 0%, transparent 70%),
+      radial-gradient(ellipse 50% 35% at 80% 70%, rgba(20,60,130,0.15) 0%, transparent 70%),
+      radial-gradient(ellipse 40% 30% at 50% 50%, rgba(10,10,40,0.3) 0%, transparent 80%);
+    animation: nebulaPulse 12s ease-in-out infinite alternate;
+  }
+
+  @keyframes nebulaPulse {
+    0%   { opacity: 0.7; }
+    100% { opacity: 1; }
+  }
+
+  /* ── NAV ── */
+  nav {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.2rem 4rem;
+    background: linear-gradient(to bottom, rgba(3,4,15,0.95), transparent);
+    backdrop-filter: blur(2px);
+  }
+
+  .nav-logo {
+    font-family: 'Cinzel', serif;
+    font-size: 1.1rem;
+    color: var(--gold);
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+
+  nav ul {
+    list-style: none;
+    display: flex;
+    gap: 0;
+  }
+
+  nav ul li {
+    position: relative;
+  }
+
+  nav ul li button {
+    background: none;
+    border: none;
+    color: var(--dim);
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.8rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    cursor: pointer;
+    padding: 0.4rem 1.2rem;
+    transition: color 0.3s;
+  }
+
+  nav ul li button:hover { color: var(--gold-light); }
+  nav ul li button.active { color: var(--gold); }
+
+  /* page indicator dots */
+  .nav-dots {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+  }
+  .nav-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--dim);
+    cursor: pointer;
+    transition: background 0.3s, transform 0.3s;
+  }
+  .nav-dot.active {
+    background: var(--gold);
+    transform: scale(1.4);
+  }
+
+  /* ── PAGE SYSTEM ── */
+  .page-wrapper {
+    position: relative;
+    z-index: 10;
+  }
+
+  .page {
+    display: none;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+    min-height: 100vh;
+  }
+
+  .page.active {
+    display: block;
+    opacity: 1;
+    transform: translateY(0);
+  }
+
+  .page.entering {
+    display: block;
+    animation: pageIn 0.6s ease forwards;
+  }
+
+  .page.leaving {
+    animation: pageOut 0.4s ease forwards;
+  }
+
+  @keyframes pageIn {
+    from { opacity: 0; transform: translateY(28px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes pageOut {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-20px); }
+  }
+
+  /* ── PAGE NAV ARROWS ── */
+  .page-nav {
+    position: fixed;
+    bottom: 2.5rem;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 100;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+  }
+
+  .page-btn {
+    background: rgba(201,168,76,0.08);
+    border: 1px solid rgba(201,168,76,0.3);
+    color: var(--gold);
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.72rem;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+    padding: 0.55rem 1.4rem;
+    cursor: pointer;
+    transition: background 0.3s, color 0.3s, border-color 0.3s;
+    border-radius: 1px;
+  }
+
+  .page-btn:hover {
+    background: var(--gold);
+    color: var(--deep-blue);
+    border-color: var(--gold);
+  }
+
+  .page-btn:disabled {
+    opacity: 0.25;
+    cursor: default;
+    pointer-events: none;
+  }
+
+  .page-counter {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    color: var(--dim);
+    letter-spacing: 0.2em;
+    min-width: 60px;
+    text-align: center;
+  }
+
+  /* ── SECTION BASE ── */
+  section {
+    position: relative;
+    padding: 6rem 4rem;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+
+  .section-label {
+    font-size: 0.7rem;
+    letter-spacing: 0.4em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1rem;
+  }
+
+  .section-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(1.8rem, 4vw, 3rem);
+    margin-bottom: 2rem;
+    color: #fff;
+  }
+
+  .divider {
+    width: 60px;
+    height: 1px;
+    background: var(--gold);
+    margin-bottom: 2.5rem;
+  }
+
+  /* ── PAGE 1: HERO ── */
+  #hero {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 2rem;
+  }
+
+  .hero-eyebrow {
+    font-size: 0.75rem;
+    letter-spacing: 0.35em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 1.5rem;
+    opacity: 0;
+    animation: fadeUp 1s 0.5s forwards;
+  }
+
+  .hero-title {
+    font-family: 'Cinzel', serif;
+    font-size: clamp(3rem, 8vw, 7rem);
+    font-weight: 900;
+    line-height: 1.05;
+    letter-spacing: 0.05em;
+    background: linear-gradient(135deg, #fff 0%, var(--gold-light) 50%, var(--gold) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    opacity: 0;
+    animation: fadeUp 1s 0.8s forwards;
+  }
+
+  .hero-sub {
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    color: var(--dim);
+    letter-spacing: 0.08em;
+    max-width: 500px;
+    opacity: 0;
+    animation: fadeUp 1s 1.1s forwards;
+  }
+
+  .hero-cta {
+    margin-top: 3rem;
+    display: inline-block;
+    padding: 0.8rem 2.5rem;
+    border: 1px solid var(--gold);
+    color: var(--gold);
+    text-decoration: none;
+    font-size: 0.8rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    cursor: pointer;
+    background: none;
+    font-family: 'Raleway', sans-serif;
+    transition: background 0.3s, color 0.3s;
+    opacity: 0;
+    animation: fadeUp 1s 1.4s forwards;
+  }
+
+  .hero-cta:hover {
+    background: var(--gold);
+    color: var(--deep-blue);
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(30px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ── TYPEWRITER ── */
+  .typewriter-wrap {
+    margin-top: 1.8rem;
+    font-size: 0.9rem;
+    color: var(--dim);
+    letter-spacing: 0.06em;
+    min-height: 1.6em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 0;
+    opacity: 0;
+    animation: fadeUp 1s 1.1s forwards;
+  }
+
+  .typewriter-prefix {
+    color: var(--gold);
+    font-style: italic;
+  }
+
+  .typewriter-text {
+    color: var(--text);
+  }
+
+  .typewriter-cursor {
+    color: var(--gold);
+    animation: blink 0.7s step-end infinite;
+    margin-left: 1px;
+  }
+
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* ── SCROLL HINT ── */
+  .scroll-hint {
+    position: absolute;
+    bottom: 2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    opacity: 0;
+    animation: fadeUp 1s 2s forwards;
+    cursor: pointer;
+  }
+
+  .scroll-hint span {
+    font-size: 0.65rem;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--dim);
+  }
+
+  .scroll-arrow {
+    width: 22px;
+    height: 36px;
+    border: 1px solid rgba(201,168,76,0.4);
+    border-radius: 11px;
+    display: flex;
+    justify-content: center;
+    padding-top: 5px;
+  }
+
+  .scroll-dot {
+    width: 4px;
+    height: 8px;
+    background: var(--gold);
+    border-radius: 2px;
+    animation: scrollBounce 1.6s ease-in-out infinite;
+  }
+
+  @keyframes scrollBounce {
+    0%, 100% { transform: translateY(0); opacity: 1; }
+    80% { transform: translateY(12px); opacity: 0; }
+  }
+
+  /* ── QUICK NUMBERS ── */
+  .qnum-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .qnum-card {
+    border: 1px solid rgba(201,168,76,0.18);
+    padding: 2rem 1.5rem;
+    border-radius: 2px;
+    text-align: center;
+    background: rgba(255,255,255,0.02);
+    transition: border-color 0.3s, background 0.3s, transform 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .qnum-card::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+    transform: scaleX(0);
+    transition: transform 0.4s;
+  }
+
+  .qnum-card:hover {
+    border-color: rgba(201,168,76,0.45);
+    background: rgba(201,168,76,0.04);
+    transform: translateY(-5px);
+  }
+
+  .qnum-card:hover::after { transform: scaleX(1); }
+
+  .qnum-value {
+    font-family: 'Cinzel', serif;
+    font-size: 3rem;
+    font-weight: 700;
+    color: var(--gold);
+    line-height: 1;
+    margin-bottom: 0.6rem;
+  }
+
+  .qnum-value span {
+    font-size: 1.4rem;
+    color: var(--gold-light);
+  }
+
+  .qnum-label {
+    font-size: 0.82rem;
+    color: var(--text);
+    letter-spacing: 0.05em;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
+  }
+
+  .qnum-detail {
+    font-size: 0.72rem;
+    color: var(--dim);
+    line-height: 1.6;
+  }
+
+  /* ── PAGE PREVIEW STRIP ── */
+  .preview-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.2rem;
+    margin-top: 1rem;
+  }
+
+  .preview-card {
+    display: flex;
+    align-items: center;
+    gap: 1.2rem;
+    padding: 1.5rem 1.8rem;
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 2px;
+    background: rgba(255,255,255,0.02);
+    cursor: pointer;
+    transition: border-color 0.3s, background 0.3s, transform 0.3s;
+  }
+
+  .preview-card:hover {
+    border-color: rgba(201,168,76,0.4);
+    background: rgba(201,168,76,0.04);
+    transform: translateX(6px);
+  }
+
+  .preview-icon {
+    font-size: 2.2rem;
+    flex-shrink: 0;
+  }
+
+  .preview-content h4 {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    color: var(--gold-light);
+    margin-bottom: 0.3rem;
+    letter-spacing: 0.05em;
+  }
+
+  .preview-content p {
+    font-size: 0.78rem;
+    color: var(--dim);
+    line-height: 1.5;
+  }
+
+  .preview-arrow {
+    margin-left: auto;
+    font-size: 1.2rem;
+    color: var(--gold);
+    opacity: 0.4;
+    transition: opacity 0.3s, transform 0.3s;
+    flex-shrink: 0;
+  }
+
+  .preview-card:hover .preview-arrow {
+    opacity: 1;
+    transform: translateX(4px);
+  }
+
+  /* ── PAGE 1: COSMOS ── */
+  #cosmos p {
+    font-size: 1.05rem;
+    line-height: 1.9;
+    color: #b0aac0;
+    max-width: 720px;
+  }
+
+  /* ── PAGE 2: GROUPS ── */
+  #groups .grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(201,168,76,0.2);
+    padding: 2rem 1.5rem;
+    border-radius: 2px;
+    transition: border-color 0.3s, background 0.3s, transform 0.3s;
+    cursor: default;
+  }
+
+  .card:hover {
+    border-color: var(--gold);
+    background: rgba(201,168,76,0.06);
+    transform: translateY(-4px);
+  }
+
+  .card-icon { font-size: 2rem; margin-bottom: 0.8rem; }
+
+  .card h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 0.95rem;
+    color: var(--gold-light);
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .card p {
+    font-size: 0.85rem;
+    color: var(--dim);
+    line-height: 1.6;
+  }
+
+  /* ── EXPANDABLE CARDS ── */
+  .card.expandable { cursor: pointer; }
+
+  .card-extra {
+    display: none;
+    margin-top: 1rem;
+    padding-top: 1rem;
+    border-top: 1px solid rgba(201,168,76,0.15);
+  }
+
+  .card-extra p {
+    font-size: 0.82rem;
+    color: var(--dim);
+    line-height: 1.7;
+  }
+
+  .card-fact {
+    margin-top: 0.8rem;
+    padding: 0.6rem 0.8rem;
+    background: rgba(201,168,76,0.08);
+    border-left: 2px solid var(--gold);
+    font-size: 0.78rem;
+    color: var(--gold-light);
+    line-height: 1.5;
+  }
+
+  .card-toggle {
+    display: inline-block;
+    margin-top: 0.8rem;
+    font-size: 0.7rem;
+    letter-spacing: 0.15em;
+    color: var(--gold);
+    text-transform: uppercase;
+    transition: color 0.2s;
+  }
+
+  .card.open .card-extra { display: block; }
+  .card.open .card-toggle { color: var(--dim); }
+  .card.open .card-toggle::before { content: '− Скрий  '; }
+  .card:not(.open) .card-toggle::before { content: ''; }
+
+  /* ── MYSTERIES SECTION ── */
+  .mystery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+    gap: 1.5rem;
+    margin-top: 1rem;
+  }
+
+  .mystery-card {
+    background: rgba(255,255,255,0.02);
+    border: 1px solid rgba(255,255,255,0.07);
+    padding: 2rem 1.5rem;
+    border-radius: 2px;
+    transition: border-color 0.3s, background 0.3s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .mystery-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, var(--gold), transparent);
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+
+  .mystery-card:hover {
+    border-color: rgba(201,168,76,0.3);
+    background: rgba(201,168,76,0.03);
+  }
+
+  .mystery-card:hover::before { opacity: 1; }
+
+  .mystery-num {
+    font-family: 'Cinzel', serif;
+    font-size: 2.5rem;
+    color: rgba(201,168,76,0.12);
+    line-height: 1;
+    margin-bottom: 0.5rem;
+    letter-spacing: 0.05em;
+  }
+
+  .mystery-card h4 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.2rem;
+    color: var(--gold-light);
+    margin-bottom: 0.7rem;
+    letter-spacing: 0.05em;
+  }
+
+  .mystery-card p {
+    font-size: 0.83rem;
+    color: var(--dim);
+    line-height: 1.7;
+  }
+
+  /* ── PAGE 3: GALLERY ── */
+  #gallery .gal-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .gal-item {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+    aspect-ratio: 4/3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: border-color 0.3s, transform 0.3s;
+  }
+
+  .gal-item:hover { border-color: var(--gold); transform: scale(1.02); }
+
+  .gal-item:first-child {
+    grid-column: 1 / -1;
+    aspect-ratio: 21/7;
+  }
+
+  .gal-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1.5rem;
+    text-align: center;
+  }
+
+  .gal-inner .gal-emoji { font-size: 3rem; }
+  .gal-inner span { font-size: 0.8rem; color: var(--dim); letter-spacing: 0.1em; }
+
+  .gal-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(80,20,120,0.4), rgba(20,60,130,0.4));
+    opacity: 0;
+    transition: opacity 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    letter-spacing: 0.1em;
+    color: var(--gold-light);
+    text-transform: uppercase;
+  }
+
+  .gal-item:hover .gal-overlay { opacity: 1; }
+
+  /* ── PAGE 3: STATS ── */
+  #stats .stats-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 2rem;
+    margin-top: 1rem;
+  }
+
+  .stat-box {
+    text-align: center;
+    padding: 2rem 1rem;
+    border: 1px solid rgba(201,168,76,0.15);
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.3s, background 0.3s;
+  }
+
+  .stat-box:hover {
+    border-color: rgba(201,168,76,0.5);
+    background: rgba(201,168,76,0.04);
+  }
+
+  .stat-box .stat-unit {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    color: var(--gold);
+    opacity: 0.6;
+  }
+
+  .stat-num {
+    font-family: 'Cinzel', serif;
+    font-size: 2.8rem;
+    color: var(--gold);
+    display: block;
+    line-height: 1;
+  }
+
+  .stat-label {
+    font-size: 0.75rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-top: 0.5rem;
+  }
+
+  .stat-sublabel {
+    font-size: 0.7rem;
+    color: rgba(201,168,76,0.5);
+    margin-top: 0.3rem;
+    font-style: italic;
+  }
+
+  /* ── PLANET BAR CHART ── */
+  .planet-chart {
+    margin-top: 3rem;
+  }
+
+  .planet-chart h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    color: var(--gold-light);
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.1em;
+  }
+
+  .planet-row {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .planet-name {
+    font-size: 0.75rem;
+    letter-spacing: 0.1em;
+    color: var(--dim);
+    width: 80px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  .planet-bar-wrap {
+    flex: 1;
+    height: 22px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .planet-bar {
+    height: 100%;
+    border-radius: 2px;
+    width: 0;
+    transition: width 1.2s cubic-bezier(0.25, 1, 0.5, 1);
+  }
+
+  .planet-km {
+    font-size: 0.65rem;
+    font-family: 'Cinzel', serif;
+    color: var(--gold-light);
+    white-space: nowrap;
+    flex-shrink: 0;
+    min-width: 90px;
+    opacity: 0;
+    transition: opacity 0.6s ease 0.8s;
+  }
+
+  .planet-km.visible {
+    opacity: 1;
+  }
+
+  /* ── FORMATION TIMELINE ── */
+  .timeline {
+    margin-top: 3rem;
+    position: relative;
+    padding-left: 2rem;
+  }
+
+  .timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+  }
+
+  .timeline h3 {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    color: var(--gold-light);
+    margin-bottom: 1.5rem;
+    letter-spacing: 0.1em;
+    margin-left: -2rem;
+    padding-left: 2rem;
+  }
+
+  .tl-item {
+    position: relative;
+    margin-bottom: 1.8rem;
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: opacity 0.6s ease, transform 0.6s ease;
+  }
+
+  .tl-item.visible {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .tl-dot {
+    position: absolute;
+    left: -2.4rem;
+    top: 0.3rem;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--gold);
+    box-shadow: 0 0 8px var(--gold);
+  }
+
+  .tl-time {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    color: var(--gold);
+    letter-spacing: 0.1em;
+  }
+
+  .tl-label {
+    font-size: 0.85rem;
+    color: var(--text);
+    margin-top: 0.2rem;
+  }
+
+  .tl-detail {
+    font-size: 0.75rem;
+    color: var(--dim);
+    margin-top: 0.1rem;
+  }
+
+  /* ── FUN FACT CARD ── */
+  .fun-fact {
+    margin-top: 3rem;
+    background: rgba(201,168,76,0.06);
+    border: 1px solid rgba(201,168,76,0.25);
+    border-radius: 2px;
+    padding: 2rem;
+    cursor: pointer;
+    transition: background 0.3s;
+    text-align: center;
+  }
+
+  .fun-fact:hover { background: rgba(201,168,76,0.1); }
+
+  .fun-fact-label {
+    font-size: 0.65rem;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 0.8rem;
+  }
+
+  .fun-fact-text {
+    font-size: 1rem;
+    color: var(--text);
+    line-height: 1.7;
+  }
+
+  .fun-fact-hint {
+    font-size: 0.7rem;
+    color: var(--dim);
+    margin-top: 0.8rem;
+    letter-spacing: 0.1em;
+  }
+
+  /* ── FOOTER ── */
+  footer {
+    position: relative;
+    z-index: 10;
+    text-align: center;
+    padding: 3rem 2rem 6rem;
+    border-top: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.75rem;
+    color: var(--dim);
+    letter-spacing: 0.1em;
+  }
+
+  footer span { color: var(--gold); }
+
+  /* ── RESPONSIVE ── */
+  @media (max-width: 768px) {
+    nav { padding: 1rem 1.5rem; }
+    nav ul { gap: 0; }
+    nav ul li button { padding: 0.4rem 0.7rem; font-size: 0.7rem; }
+    section { padding: 4rem 1.5rem; }
+    #gallery .gal-grid { grid-template-columns: 1fr; }
+    #gallery .gal-item:first-child { grid-column: 1 / -1; aspect-ratio: 16/7; }
+  }
+</style>
+</head>
+<body>
+
+<canvas id="starfield"></canvas>
+<div class="nebula-overlay"></div>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo" onclick="goTo(0)">Отвъд Небосвода</div>
+  <ul>
+    <li><button onclick="goTo(0)" class="active" id="nav-0">Начало</button></li>
+    <li><button onclick="goTo(1)" id="nav-1">Науката</button></li>
+    <li><button onclick="goTo(2)" id="nav-2">Галерия &amp; Данни</button></li>
+  </ul>
+  <div class="nav-dots">
+    <div class="nav-dot active" onclick="goTo(0)" id="dot-0"></div>
+    <div class="nav-dot" onclick="goTo(1)" id="dot-1"></div>
+    <div class="nav-dot" onclick="goTo(2)" id="dot-2"></div>
+  </div>
+</nav>
+
+<div class="page-wrapper">
+
+  <!-- ════════════════ PAGE 1 ════════════════ -->
+  <div class="page active" id="page-0">
+
+    <!-- HERO -->
+    <section id="hero">
+      <p class="hero-eyebrow">STEAM Проект &nbsp;·&nbsp; Тема №22</p>
+      <h1 class="hero-title">Отвъд<br>Небосвода</h1>
+
+      <!-- TYPEWRITER FACT -->
+      <div class="typewriter-wrap">
+        <span class="typewriter-prefix">Знаеш ли, че&nbsp;</span>
+        <span class="typewriter-text" id="typewriter"></span><span class="typewriter-cursor">|</span>
+      </div>
+
+      <button class="hero-cta" onclick="goTo(1)">Открий повече</button>
+
+
+    </section>
+
+    <!-- QUICK NUMBERS -->
+    <section id="quick-nums">
+      <p class="section-label">Мащабът на вселената</p>
+      <h2 class="section-title">Числата говорят</h2>
+      <div class="divider"></div>
+      <div class="qnum-grid">
+        <div class="qnum-card">
+          <div class="qnum-value">8 <span>мин.</span></div>
+          <div class="qnum-label">Светлината от Слънцето до теб</div>
+          <div class="qnum-detail">149 600 000 km — изминати за 8 минути и 20 секунди</div>
+        </div>
+        <div class="qnum-card">
+          <div class="qnum-value">5 500<span>+</span></div>
+          <div class="qnum-label">Екзопланети открити дотук</div>
+          <div class="qnum-detail">И броят расте всяка година — някои може да крият живот</div>
+        </div>
+        <div class="qnum-card">
+          <div class="qnum-value">∞</div>
+          <div class="qnum-label">Колко от тях може да имат живот?</div>
+          <div class="qnum-detail">Математиката казва — много. Но все още мълчим в тъмното.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- COSMOS INTRO -->
+    <section id="cosmos">
+      <p class="section-label">Въведение</p>
+      <h2 class="section-title">Какво е Космосът?</h2>
+      <div class="divider"></div>
+      <p>Космосът е безкрайното пространство извън атмосферата на Земята. Той съдържа милиарди галактики, всяка от тях с милиарди звезди, планети, газови облаци и тъмна материя. Разстоянията са толкова огромни, че се измерват в светлинни години — разстоянието, което светлината изминава за една година, или около 9,46 трилиона километра.</p>
+      <br>
+      <p>От Слънчевата ни система до най-отдалечените квазари — космосът е арена на крайни физически явления и неизчерпаеми тайни, чието разгадаване е мечтата на всяко поколение учени и изследователи.</p>
+    </section>
+
+    <!-- PAGE PREVIEW STRIP -->
+    <section id="preview-strip" style="padding-top:0; padding-bottom:7rem;">
+      <p class="section-label">Разгледай сайта</p>
+      <div class="preview-grid">
+        <div class="preview-card" onclick="goTo(1)">
+          <div class="preview-icon">🔭</div>
+          <div class="preview-content">
+            <h4>Науката</h4>
+            <p>Звезди, черни дупки, мъглявини и въпросите, на които науката все още няма отговор.</p>
+          </div>
+          <div class="preview-arrow">→</div>
+        </div>
+        <div class="preview-card" onclick="goTo(2)">
+          <div class="preview-icon">📊</div>
+          <div class="preview-content">
+            <h4>Галерия &amp; Данни</h4>
+            <p>Визуална галерия и завладяващи статистики — от диаметрите на планетите до раждането на вселената.</p>
+          </div>
+          <div class="preview-arrow">→</div>
+        </div>
+      </div>
+    </section>
+
+    <footer>
+      <p><span>„Отвъд Небосвода"</span></p>
+    </footer>
+  </div>
+
+  <!-- ════════════════ PAGE 2 ════════════════ -->
+  <div class="page" id="page-1">
+
+    <!-- GROUPS -->
+    <section id="groups" style="padding-top: 8rem;">
+      <p class="section-label">Наука</p>
+      <h2 class="section-title">Основни Космически Групи</h2>
+      <div class="divider"></div>
+      <p style="color:var(--dim);font-size:0.85rem;margin-bottom:2rem;letter-spacing:0.05em;">Натисни върху всяка карта, за да научиш повече ↓</p>
+      <div class="grid">
+
+        <div class="card expandable" onclick="toggleCard(this)">
+          <div class="card-icon">☀️</div>
+          <h3>Звезди</h3>
+          <p>Гигантски плазмени сфери, генериращи светлина и топлина чрез ядрен синтез. Нашето Слънце е типична звезда от клас G.</p>
+          <div class="card-extra">
+            <p>Звездите се раждат в мъглявини и живеят милиарди години. Масата им определя съдбата им — малките стават бели джуджета, а гигантите избухват като свръхнови и могат да образуват неутронни звезди или черни дупки.</p>
+            <div class="card-fact">⚡ Ядрото на Слънцето достига 15 000 000°C</div>
+          </div>
+          <span class="card-toggle">+ Покажи повече</span>
+        </div>
+
+        <div class="card expandable" onclick="toggleCard(this)">
+          <div class="card-icon">🪐</div>
+          <h3>Планети</h3>
+          <p>Небесни тела, обикалящи около звезди. В нашата Слънчева система има 8 планети — от скалистия Меркурий до ледения Нептун.</p>
+          <div class="card-extra">
+            <p>Планетите биват скалисти (Меркурий, Венера, Земя, Марс) и газови гиганти (Юпитер, Сатурн, Уран, Нептун). Учените са открили над 5 500 екзопланети извън Слънчевата система — някои от тях може би имат условия за живот.</p>
+            <div class="card-fact">🌍 Земята е единствената планета с известен живот — засега.</div>
+          </div>
+          <span class="card-toggle">+ Покажи повече</span>
+        </div>
+
+        <div class="card expandable" onclick="toggleCard(this)">
+          <div class="card-icon">🌌</div>
+          <h3>Галактики</h3>
+          <p>Системи от милиарди звезди, газ и прах, свързани от гравитацията. Млечният Път е нашата галактика — спирална с диаметър ~100 000 св. г.</p>
+          <div class="card-extra">
+            <p>Галактиките са три основни вида: спирални, елиптични и неправилни. В центъра на почти всяка галактика се крие свръхмасивна черна дупка. Млечният Път и Андромеда са на курс за сблъсък — след около 4.5 милиарда години.</p>
+            <div class="card-fact">🌀 Слънцето обикаля центъра на Млечния Път веднъж на 225 млн. години.</div>
+          </div>
+          <span class="card-toggle">+ Покажи повече</span>
+        </div>
+
+        <div class="card expandable" onclick="toggleCard(this)">
+          <div class="card-icon">🕳️</div>
+          <h3>Черни Дупки</h3>
+          <p>Региони с толкова силна гравитация, че дори светлината не може да ги напусне. Образуват се от колапса на масивни звезди.</p>
+          <div class="card-extra">
+            <p>Около черната дупка съществува „събитиен хоризонт" — граница, след която нищо не може да избяга. Времето там тече по-бавно заради екстремната гравитация — явление, описано от Айнщайн като гравитационно забавяне на времето.</p>
+            <div class="card-fact">🌑 Ако Земята стане черна дупка, тя би събра в топка с диаметър 1.7 cm.</div>
+          </div>
+          <span class="card-toggle">+ Покажи повече</span>
+        </div>
+
+        <div class="card expandable" onclick="toggleCard(this)">
+          <div class="card-icon">💫</div>
+          <h3>Мъглявини</h3>
+          <p>Облаци от газ и прах в космоса — родилни места на звезди. Мъглявината Орион е видима с просто око нощем.</p>
+          <div class="card-extra">
+            <p>Мъглявините са сред най-красивите обекти в космоса. „Стълбовете на Сътворението" в Орловата мъглявина са колони от газ, където се раждат нови звезди в момента. Те са на 6 500 светлинни години от Земята.</p>
+            <div class="card-fact">✨ Мъглявината Бумеранг е най-студеното известно място — само 1 К над абсолютната нула.</div>
+          </div>
+          <span class="card-toggle">+ Покажи повече</span>
+        </div>
+
+        <div class="card expandable" onclick="toggleCard(this)">
+          <div class="card-icon">☄️</div>
+          <h3>Комети и Астероиди</h3>
+          <p>Малки тела, останали от формирането на Слънчевата система. Кометите имат характерни опашки от лед и прах.</p>
+          <div class="card-extra">
+            <p>Смята се, че кометите са донесли вода и органични молекули на Земята преди милиарди години — може би са дали тласък на живота. Пасът на астероидите между Марс и Юпитер съдържа над 1 милион скални тела.</p>
+            <div class="card-fact">☄️ Опашката на комета винаги сочи ДАЛЕЧ от Слънцето — независимо от посоката на движение.</div>
+          </div>
+          <span class="card-toggle">+ Покажи повече</span>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- MYSTERIES SECTION -->
+    <section id="mysteries" style="padding-top:2rem;">
+      <p class="section-label">Тайните на вселената</p>
+      <h2 class="section-title">Въпроси без отговор</h2>
+      <div class="divider"></div>
+      <div class="mystery-grid">
+
+        <div class="mystery-card">
+          <div class="mystery-num">01</div>
+          <h4>Сами ли сме?</h4>
+          <p>С трилиони планети в наблюдаемата вселена статистиката говори, че животът трябва да е навсякъде. Но защо не сме чули нищо? Това е т.нар. „Парадокс на Ферми".</p>
+        </div>
+
+        <div class="mystery-card">
+          <div class="mystery-num">02</div>
+          <h4>Какво е тъмната материя?</h4>
+          <p>27% от вселената е нещо, което не излъчва светлина и не взаимодейства с нея — но го усещаме гравитационно. Никой не знае от какво е направено.</p>
+        </div>
+
+        <div class="mystery-card">
+          <div class="mystery-num">03</div>
+          <h4>Какво има вътре в черна дупка?</h4>
+          <p>Физиката, каквато я познаваме, спира да работи след събитийния хоризонт. Общата теория на относителността и квантовата механика дават взаимно противоречиви отговори.</p>
+        </div>
+
+        <div class="mystery-card">
+          <div class="mystery-num">04</div>
+          <h4>Какво е имало преди Големия взрив?</h4>
+          <p>Времето само е започнало с Големия взрив — следователно въпросът „преди" може да няма смисъл. Или може би нашата вселена е само един мехур в безкраен мултивселенски океан.</p>
+        </div>
+
+      </div>
+    </section>
+
+    <footer>
+      <p><span>„Отвъд Небосвода"</span></p>
+    </footer>
+  </div>
+
+  <!-- ════════════════ PAGE 3 ════════════════ -->
+  <div class="page" id="page-2">
+
+    <!-- GALLERY -->
+    <section id="gallery" style="padding-top: 8rem;">
+      <p class="section-label">Визуализация</p>
+      <h2 class="section-title">Галерия</h2>
+      <div class="divider"></div>
+      <div class="gal-grid">
+        <div class="gal-item" style="position:relative;overflow:hidden;background:#000;" onclick="openGallery('milkyway', 0)">
+          <img src="milky_way2.jpg" alt="Млечният Път" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:0.85;transition:opacity 0.4s;">
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:1rem 1.5rem;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);z-index:2;">
+            <span style="font-size:0.8rem;color:var(--gold-light);letter-spacing:0.1em;">Млечният Път — нашата галактична родина</span>
+          </div>
+          <div class="gal-overlay">Виж повече</div>
+        </div>
+        <div class="gal-item" style="position:relative;overflow:hidden;background:#000;" onclick="openGallery('saturn', 0)">
+          <img src="saturn.jpg" alt="Сатурн" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:0.85;transition:opacity 0.4s;">
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:1rem 1.5rem;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);z-index:2;">
+            <span style="font-size:0.8rem;color:var(--gold-light);letter-spacing:0.1em;">Сатурн и неговите пръстени</span>
+          </div>
+          <div class="gal-overlay">Виж повече</div>
+        </div>
+        <div class="gal-item" style="position:relative;overflow:hidden;background:#000;" onclick="openGallery('sunstorm', 0)">
+          <img src="sunst.jpg" alt="Слънчева буря" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:0.85;transition:opacity 0.4s;">
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:1rem 1.5rem;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);z-index:2;">
+            <span style="font-size:0.8rem;color:var(--gold-light);letter-spacing:0.1em;">Слънчева буря — изглед от космоса</span>
+          </div>
+          <div class="gal-overlay">Виж повече</div>
+        </div>
+        <div class="gal-item" style="position:relative;overflow:hidden;background:#000;" onclick="openGallery('blackhole', 0)">
+          <img src="black_hole_m87.jpg" alt="Черна дупка M87" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:0.85;transition:opacity 0.4s;">
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:1rem 1.5rem;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);z-index:2;">
+            <span style="font-size:0.8rem;color:var(--gold-light);letter-spacing:0.1em;">Черна дупка — поглъщател на светлина</span>
+          </div>
+          <div class="gal-overlay">Виж повече</div>
+        </div>
+        <div class="gal-item" style="position:relative;overflow:hidden;background:#000;" onclick="openGallery('lunar', 0)">
+          <img src="lunar_surface.jpg" alt="Лунна повърхност" style="width:100%;height:100%;object-fit:cover;position:absolute;inset:0;opacity:0.85;transition:opacity 0.4s;">
+          <div style="position:absolute;bottom:0;left:0;right:0;padding:1rem 1.5rem;background:linear-gradient(to top,rgba(0,0,0,0.8),transparent);z-index:2;">
+            <span style="font-size:0.8rem;color:var(--gold-light);letter-spacing:0.1em;">Лунна повърхност — кратери от метеорити</span>
+          </div>
+          <div class="gal-overlay">Виж повече</div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- STATS -->
+    <section id="stats">
+      <p class="section-label">Математика</p>
+      <h2 class="section-title">Статистически Данни</h2>
+      <div class="divider"></div>
+
+      <!-- Big numbers -->
+      <div class="stats-row">
+        <div class="stat-box">
+          <span class="stat-num" data-target="93">0</span>
+          <span class="stat-unit">млрд. св.г.</span>
+          <p class="stat-label">Диаметър на видимата вселена</p>
+          <p class="stat-sublabel">≈ 8.8 × 10²⁶ метра</p>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" data-target="2">0</span>
+          <span class="stat-unit">трилиона</span>
+          <p class="stat-label">Галактики в наблюдаемата вселена</p>
+          <p class="stat-sublabel">2 000 000 000 000 галактики</p>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" data-target="300">0</span>
+          <span class="stat-unit">000 km/s</span>
+          <p class="stat-label">Скорост на светлината</p>
+          <p class="stat-sublabel">7.5 обиколки на Земята за 1 сек.</p>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" data-target="13">0</span>
+          <span class="stat-unit">млрд. год.</span>
+          <p class="stat-label">Възраст на вселената</p>
+          <p class="stat-sublabel">13 800 000 000 години</p>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" data-target="27">0</span>
+          <span class="stat-unit">%</span>
+          <p class="stat-label">Тъмна материя</p>
+          <p class="stat-sublabel">Невидима, но гравитационно активна</p>
+        </div>
+        <div class="stat-box">
+          <span class="stat-num" data-target="68">0</span>
+          <span class="stat-unit">%</span>
+          <p class="stat-label">Тъмна енергия</p>
+          <p class="stat-sublabel">Ускорява разширяването на вселената</p>
+        </div>
+      </div>
+
+      <!-- Planet size bar chart -->
+      <div class="planet-chart">
+        <h3>Диаметри на планетите в Слънчевата система (km)</h3>
+        <div id="planet-bars">
+          <div class="planet-row"><span class="planet-name">Меркурий</span><div class="planet-bar-wrap"><div class="planet-bar" style="background:linear-gradient(90deg,#a0856e,#c4a882)" data-w="1.13" data-label="4 879 km"></div></div><span class="planet-km">4 879 km</span></div>
+          <div class="planet-row"><span class="planet-name">Венера</span><div class="planet-bar-wrap"><div class="planet-bar" style="background:linear-gradient(90deg,#c8a96e,#e8cc88)" data-w="2.81" data-label="12 104 km"></div></div><span class="planet-km">12 104 km</span></div>
+          <div class="planet-row"><span class="planet-name">Земя</span><div class="planet-bar-wrap"><div class="planet-bar" style="background:linear-gradient(90deg,#3a7bd5,#5ab8e0)" data-w="2.96" data-label="12 756 km"></div></div><span class="planet-km">12 756 km</span></div>
+          <div class="planet-row"><span class="planet-name">Марс</span><div class="planet-bar-wrap"><div class="planet-bar" style="background:linear-gradient(90deg,#c1440e,#e06030)" data-w="1.58" data-label="6 792 km"></div></div><span class="planet-km">6 792 km</span></div>
+          <div class="planet-row"><span class="planet-name">Юпитер</span><div class="planet-bar-wrap"><div class="planet-bar" style="background:linear-gradient(90deg,#b5893a,#d4a84c)" data-w="33.25" data-label="142 984 km"></div></div><span class="planet-km">142 984 km</span></div>
+          <div class="planet-row"><span class="planet-name">Сатурн</span><div class="planet-bar-wrap"><div class="planet-bar" style="background:linear-gradient(90deg,#c4a26a,#e0c080)" data-w="28.28" data-label="120 536 km"></div></div><span class="planet-km">120 536 km</span></div>
+          <div class="planet-row"><span class="planet-name">Уран</span><div class="planet-bar-wrap"><div class="planet-bar" style="background:linear-gradient(90deg,#4fc1c0,#88e0e0)" data-w="12.08" data-label="51 118 km"></div></div><span class="planet-km">51 118 km</span></div>
+          <div class="planet-row"><span class="planet-name">Нептун</span><div class="planet-bar-wrap"><div class="planet-bar" style="background:linear-gradient(90deg,#2040c0,#4060e0)" data-w="11.65" data-label="49 528 km"></div></div><span class="planet-km">49 528 km</span></div>
+        </div>
+      </div>
+
+      <!-- Formation timeline -->
+      <div class="timeline">
+        <h3>Хронология на формирането на вселената</h3>
+
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-time">0 секунди</div>
+          <div class="tl-label">Големият взрив (Big Bang)</div>
+          <div class="tl-detail">Температура: 10³² K — по-гореща от всичко познато</div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-time">10⁻³⁶ секунди</div>
+          <div class="tl-label">Космическа инфлация</div>
+          <div class="tl-detail">Вселената се разширява с 10²⁶ пъти за миг</div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-time">3 минути</div>
+          <div class="tl-label">Нуклеосинтез — раждат се водород и хелий</div>
+          <div class="tl-detail">75% водород, 25% хелий — всичко останало е звездна пепел</div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-time">380 000 години</div>
+          <div class="tl-label">Реликтово излъчване — вселената се изяснява</div>
+          <div class="tl-detail">Фотоните се освобождават — вселената вече е прозрачна</div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-time">200 млн. години</div>
+          <div class="tl-label">Раждат се първите звезди</div>
+          <div class="tl-detail">Масивни звезди, 100–1000× по-тежки от Слънцето</div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-time">1 млрд. години</div>
+          <div class="tl-label">Формират се първите галактики</div>
+          <div class="tl-detail">Сливане на звездни системи под силата на гравитацията</div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-time">9.2 млрд. години</div>
+          <div class="tl-label">Раждане на Слънчевата система</div>
+          <div class="tl-detail">Преди ~4.6 млрд. г. от колапс на газово-прахов облак</div>
+        </div>
+
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-time">13.8 млрд. години</div>
+          <div class="tl-label">Сега — ти четеш това</div>
+          <div class="tl-detail">Вселената продължава да се разширява с ускорение</div>
+        </div>
+      </div>
+
+      <!-- Fun fact card -->
+      <div class="fun-fact" id="fun-fact" onclick="nextFact()">
+        <p class="fun-fact-label">⚡ Знаеш ли, че...</p>
+        <p class="fun-fact-text" id="fact-text">Ако Слънцето беше с размерите на топка за баскетбол, Земята би била с размерите на монета от 1 стотинка — на разстояние 26 метра.</p>
+        <p class="fun-fact-hint">Натисни за следващ факт →</p>
+      </div>
+
+    </section>
+
+    <footer>
+      <p><span>„Отвъд Небосвода"</span></p>
+    </footer>
+  </div>
+
+</div><!-- end page-wrapper -->
+
+<!-- PAGE NAVIGATION -->
+<div class="page-nav">
+  <button class="page-btn" id="btn-prev" onclick="goTo(currentPage - 1)" disabled>← Назад</button>
+  <span class="page-counter" id="page-counter">1 / 3</span>
+  <button class="page-btn" id="btn-next" onclick="goTo(currentPage + 1)">Напред →</button>
+</div>
+
+<script>
+/* ════════════════════════════════════════
+   PAGE SWITCHING
+════════════════════════════════════════ */
+let currentPage = 0;
+const totalPages = 3;
+
+function goTo(n) {
+  if (n < 0 || n >= totalPages || n === currentPage) return;
+
+  const prev = document.getElementById('page-' + currentPage);
+  const next = document.getElementById('page-' + n);
+
+  prev.style.animation = 'pageOut 0.4s ease forwards';
+  setTimeout(() => {
+    prev.style.display = 'none';
+    prev.style.animation = '';
+    next.style.display = 'block';
+    next.style.animation = 'pageIn 0.6s ease forwards';
+    window.scrollTo(0, 0);
+
+    // trigger stat count-up if going to page 3
+    if (n === 2) setTimeout(triggerCountUp, 400);
+  }, 380);
+
+  currentPage = n;
+  updateNav();
+}
+
+function updateNav() {
+  for (let i = 0; i < totalPages; i++) {
+    document.getElementById('nav-' + i).classList.toggle('active', i === currentPage);
+    document.getElementById('dot-' + i).classList.toggle('active', i === currentPage);
+  }
+  document.getElementById('btn-prev').disabled = currentPage === 0;
+  document.getElementById('btn-next').disabled = currentPage === totalPages - 1;
+  document.getElementById('page-counter').textContent = (currentPage + 1) + ' / ' + totalPages;
+}
+
+/* ════════════════════════════════════════
+   STARFIELD
+════════════════════════════════════════ */
+const canvas = document.getElementById('starfield');
+const ctx = canvas.getContext('2d');
+
+let W, H, stars = [], shootingStars = [];
+
+function resize() {
+  W = canvas.width  = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+
+function randomStar() {
+  return {
+    x: Math.random() * W,
+    y: Math.random() * H,
+    r: Math.random() * 1.4 + 0.2,
+    alpha: Math.random() * 0.6 + 0.2,
+    speed: Math.random() * 0.003 + 0.001,
+    phase: Math.random() * Math.PI * 2,
+    color: ['#ffffff','#ffe8c0','#c8d8ff','#ffd0d0'][Math.floor(Math.random()*4)]
+  };
+}
+
+function initStars(n = 320) {
+  stars = [];
+  for (let i = 0; i < n; i++) stars.push(randomStar());
+}
+
+function spawnShootingStar() {
+  const startX = Math.random() * W * 0.7;
+  const startY = Math.random() * H * 0.4;
+  const angle  = Math.PI / 4 + (Math.random() - 0.5) * 0.5;
+  const length = 120 + Math.random() * 200;
+  const speed  = 6 + Math.random() * 8;
+  shootingStars.push({
+    x: startX, y: startY,
+    vx: Math.cos(angle) * speed,
+    vy: Math.sin(angle) * speed,
+    length, life: 1, decay: 0.018 + Math.random() * 0.012
+  });
+}
+
+setInterval(() => { if (Math.random() < 0.6) spawnShootingStar(); }, 2000);
+
+let t = 0;
+function draw() {
+  ctx.clearRect(0, 0, W, H);
+  t += 0.01;
+
+  for (const s of stars) {
+    const twinkle = s.alpha + Math.sin(t * s.speed * 60 + s.phase) * 0.25;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fillStyle = s.color;
+    ctx.globalAlpha = Math.max(0, Math.min(1, twinkle));
+    ctx.fill();
+  }
+
+  ctx.globalAlpha = 1;
+  for (let i = shootingStars.length - 1; i >= 0; i--) {
+    const ss = shootingStars[i];
+    ss.x += ss.vx;
+    ss.y += ss.vy;
+    ss.life -= ss.decay;
+    if (ss.life <= 0) { shootingStars.splice(i, 1); continue; }
+
+    const angle = Math.atan2(ss.vy, ss.vx);
+    const tailX = ss.x - Math.cos(angle) * ss.length;
+    const tailY = ss.y - Math.sin(angle) * ss.length;
+
+    const grad = ctx.createLinearGradient(tailX, tailY, ss.x, ss.y);
+    grad.addColorStop(0, `rgba(255,255,255,0)`);
+    grad.addColorStop(0.7, `rgba(220,210,255,${ss.life * 0.4})`);
+    grad.addColorStop(1, `rgba(255,255,255,${ss.life * 0.9})`);
+
+    ctx.beginPath();
+    ctx.moveTo(tailX, tailY);
+    ctx.lineTo(ss.x, ss.y);
+    ctx.strokeStyle = grad;
+    ctx.lineWidth = 1.5 * ss.life;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.arc(ss.x, ss.y, 1.5 * ss.life, 0, Math.PI * 2);
+    ctx.fillStyle = `rgba(255,255,255,${ss.life})`;
+    ctx.fill();
+  }
+
+  requestAnimationFrame(draw);
+}
+
+resize();
+initStars();
+window.addEventListener('resize', () => { resize(); initStars(); });
+draw();
+
+/* ════════════════════════════════════════
+   TYPEWRITER
+════════════════════════════════════════ */
+const twFacts = [
+  'звуковите вълни не могат да се разпространяват в космоса — там е абсолютна тишина?',
+  'един ден на Венера е по-дълъг от нейната година?',
+  'следите от краката на астронавтите на Луната ще останат там милиони години?',
+  'Слънцето съставлява 99.86% от масата на цялата Слънчева система?',
+  'най-голямата позната звезда — UY Scuti — е 1700 пъти по-голяма от Слънцето?',
+  'космонавтите растат с до 5 cm в космоса заради липсата на гравитация?',
+];
+let twIndex = 0, twChar = 0, twDeleting = false, twPause = 0;
+const twEl = document.getElementById('typewriter');
+
+function typeStep() {
+  const current = twFacts[twIndex];
+  if (twPause > 0) { twPause--; setTimeout(typeStep, 60); return; }
+
+  if (!twDeleting) {
+    twEl.textContent = current.slice(0, ++twChar);
+    if (twChar === current.length) { twDeleting = true; twPause = 38; }
+    setTimeout(typeStep, 48);
+  } else {
+    twEl.textContent = current.slice(0, --twChar);
+    if (twChar === 0) { twDeleting = false; twIndex = (twIndex + 1) % twFacts.length; twPause = 8; }
+    setTimeout(typeStep, 28);
+  }
+}
+setTimeout(typeStep, 2200);
+
+/* ════════════════════════════════════════
+   EXPANDABLE CARDS
+════════════════════════════════════════ */
+function toggleCard(card) {
+  const isOpen = card.classList.contains('open');
+  card.classList.toggle('open', !isOpen);
+  const toggle = card.querySelector('.card-toggle');
+  if (toggle) toggle.textContent = isOpen ? '+ Покажи повече' : '− Скрий';
+}
+
+/* ════════════════════════════════════════
+   COUNT-UP ANIMATION
+════════════════════════════════════════ */
+let countUpDone = false;
+function triggerCountUp() {
+  if (countUpDone) return;
+  countUpDone = true;
+
+  document.querySelectorAll('.stat-num[data-target]').forEach(el => {
+    const target = parseInt(el.dataset.target);
+    let current = 0;
+    const duration = 1400;
+    const steps = 60;
+    const increment = target / steps;
+    const timer = setInterval(() => {
+      current = Math.min(current + increment, target);
+      el.textContent = Math.floor(current).toLocaleString('bg-BG');
+      if (current >= target) { el.textContent = target.toLocaleString('bg-BG'); clearInterval(timer); }
+    }, duration / steps);
+  });
+
+  // Animate planet bars
+  setTimeout(() => {
+    document.querySelectorAll('.planet-bar').forEach(bar => {
+      const w = parseFloat(bar.dataset.w);
+      bar.style.width = (w * 2.8) + '%';
+    });
+    document.querySelectorAll('.planet-km').forEach(el => {
+      el.classList.add('visible');
+    });
+  }, 300);
+
+  // Animate timeline items
+  document.querySelectorAll('.tl-item').forEach((item, i) => {
+    setTimeout(() => item.classList.add('visible'), 500 + i * 180);
+  });
+}
+
+/* ════════════════════════════════════════
+   FUN FACTS
+════════════════════════════════════════ */
+const facts = [
+  'Ако Слънцето беше с размерите на топка за баскетбол, Земята би била с размерите на монета от 1 стотинка — на разстояние 26 метра.',
+  'Светлината от Слънцето достига Земята за 8 минути и 20 секунди. Тя е напуснала Слънцето, преди да си започнал да четеш изречението.',
+  'В Млечния Път има между 100 и 400 милиарда звезди. Ако броиш по 1 в секунда — ще ти трябват над 3 000 години.',
+  'Черната дупка в центъра на М87 е толкова масивна, колкото 6.5 милиарда Слънца — и беше фотографирана за първи път чак през 2019 г.',
+  'Юпитер е толкова голям, че всички останали планети от Слънчевата система биха се поместили вътре в него — с място за още.',
+  'Неутронна звезда с размерите на София би тежала повече от цялата планета Земя.',
+  '95% от вселената е тъмна материя и тъмна енергия — невидими, но реални. Само 5% е всичко, което можем да наблюдаваме.',
+  'Разстоянието от Земята до Луната е около 384 400 километра. Ако шофираш с 100 километра в час — ще стигнеш за около 160 дни без почивка.',
+];
+let factIndex = 0;
+function nextFact() {
+  factIndex = (factIndex + 1) % facts.length;
+  const el = document.getElementById('fact-text');
+  el.style.opacity = 0;
+  setTimeout(() => { el.textContent = facts[factIndex]; el.style.opacity = 1; }, 250);
+}
+document.getElementById('fact-text').style.transition = 'opacity 0.25s';
+
+/* init nav state */
+updateNav();
+
+/* ════════════════════════════════════════
+   UNIVERSAL GALLERY LIGHTBOX
+════════════════════════════════════════ */
+const galleries = {
+  milkyway: {
+    images: [
+      { src: 'milky_way2.jpg', caption: 'Млечният Път — панорама от земята' },
+      { src: 'milky_way.jpg',  caption: 'Галактиката Андромеда — нашата галактична съседка' }
+    ]
+  },
+  saturn: {
+    images: [
+      { src: 'saturn.jpg',       caption: 'Сатурн — газовият гигант с неговата буря на полюса' },
+      { src: 'saturn_rings.jpg', caption: 'Пръстените на Сатурн — ледени и скални частици' }
+    ]
+  },
+  sunstorm: {
+    images: [
+      { src: 'sunst.jpg', caption: 'Слънчева буря — изригване на плазма, видяно от орбита' },
+      { src: 'snt.jpg',   caption: 'Слънчев залез — огненото слънце потъва зад хоризонта' }
+    ]
+  },
+  blackhole: {
+    images: [
+      { src: 'black_hole_m87.jpg', caption: 'Черна дупка — акреционен диск и релативистичен джет' },
+      { src: 'black_hole.jpg',     caption: 'Черна дупка — събитиен хоризонт и изкривяване на пространство-времето' }
+    ]
+  },
+  lunar: {
+    images: [
+      { src: 'lunar_surface.jpg',  caption: 'Лунна повърхност — кратери и планински вериги, снимани от орбита' },
+      { src: 'lunar_surface2.jpg', caption: 'Лунна повърхност отблизо — следи от древни метеоритни удари' }
+    ]
+  }
+};
+
+let currentGallery = null;
+let currentIndex = 0;
+
+function openGallery(key, index) {
+  currentGallery = galleries[key];
+  currentIndex = index;
+  renderLightbox();
+  document.getElementById('gal-lightbox').style.display = 'flex';
+  document.body.style.overflow = 'hidden';
+}
+
+function closeLightbox() {
+  document.getElementById('gal-lightbox').style.display = 'none';
+  document.body.style.overflow = '';
+}
+
+function galPrev() {
+  currentIndex = (currentIndex - 1 + currentGallery.images.length) % currentGallery.images.length;
+  renderLightbox();
+}
+
+function galNext() {
+  currentIndex = (currentIndex + 1) % currentGallery.images.length;
+  renderLightbox();
+}
+
+function galGoTo(i) {
+  currentIndex = i;
+  renderLightbox();
+}
+
+function renderLightbox() {
+  const img = document.getElementById('gal-img');
+  const cap = document.getElementById('gal-caption');
+  const dotsEl = document.getElementById('gal-dots');
+  const total = currentGallery.images.length;
+
+  img.style.opacity = 0;
+  setTimeout(() => {
+    img.src = currentGallery.images[currentIndex].src;
+    cap.textContent = currentGallery.images[currentIndex].caption;
+    img.style.opacity = 1;
+  }, 180);
+
+  dotsEl.innerHTML = '';
+  for (let i = 0; i < total; i++) {
+    const d = document.createElement('div');
+    d.className = 'gal-lb-dot' + (i === currentIndex ? ' gal-lb-dot-active' : '');
+    d.onclick = () => galGoTo(i);
+    dotsEl.appendChild(d);
+  }
+
+  document.getElementById('gal-arrow-prev').style.visibility = total > 1 ? 'visible' : 'hidden';
+  document.getElementById('gal-arrow-next').style.visibility = total > 1 ? 'visible' : 'hidden';
+}
+
+document.addEventListener('keydown', e => {
+  const lb = document.getElementById('gal-lightbox');
+  if (!lb || lb.style.display !== 'flex') return;
+  if (e.key === 'ArrowLeft')  galPrev();
+  if (e.key === 'ArrowRight') galNext();
+  if (e.key === 'Escape')     closeLightbox();
+});
+</script>
+
+<!-- UNIVERSAL GALLERY LIGHTBOX -->
+<div id="gal-lightbox" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,0.93);align-items:center;justify-content:center;flex-direction:column;" onclick="if(event.target===this)closeLightbox()">
+
+  <button onclick="closeLightbox()" style="position:absolute;top:1.5rem;right:2rem;background:none;border:none;color:rgba(255,255,255,0.5);font-size:2rem;cursor:pointer;line-height:1;transition:color 0.2s;z-index:2;" onmouseover="this.style.color='#fff'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">✕</button>
+
+  <div style="position:relative;display:flex;align-items:center;gap:1.5rem;max-width:90vw;">
+
+    <button id="gal-arrow-prev" onclick="galPrev()" style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.4);color:#c9a84c;font-size:1.8rem;width:52px;height:52px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:background 0.2s,transform 0.2s;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='rgba(201,168,76,0.3)';this.style.transform='scale(1.1)'" onmouseout="this.style.background='rgba(201,168,76,0.1)';this.style.transform='scale(1)'">&#8592;</button>
+
+    <img id="gal-img" src="" alt="" style="max-height:75vh;max-width:72vw;object-fit:contain;border-radius:2px;transition:opacity 0.18s;box-shadow:0 0 60px rgba(0,0,0,0.8);">
+
+    <button id="gal-arrow-next" onclick="galNext()" style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.4);color:#c9a84c;font-size:1.8rem;width:52px;height:52px;border-radius:50%;cursor:pointer;flex-shrink:0;transition:background 0.2s,transform 0.2s;display:flex;align-items:center;justify-content:center;" onmouseover="this.style.background='rgba(201,168,76,0.3)';this.style.transform='scale(1.1)'" onmouseout="this.style.background='rgba(201,168,76,0.1)';this.style.transform='scale(1)'">&#8594;</button>
+  </div>
+
+  <p id="gal-caption" style="margin-top:1.2rem;font-family:'Raleway',sans-serif;font-size:0.85rem;color:rgba(201,168,76,0.9);letter-spacing:0.12em;text-align:center;max-width:600px;"></p>
+
+  <div id="gal-dots" style="display:flex;gap:0.6rem;margin-top:0.8rem;"></div>
+</div>
+
+<style>
+.gal-lb-dot { width:8px;height:8px;border-radius:50%;background:rgba(201,168,76,0.3);cursor:pointer;transition:transform 0.2s,background 0.2s; }
+.gal-lb-dot-active { background:#c9a84c !important;transform:scale(1.4); }
+</style>
+</body>
+</html>
